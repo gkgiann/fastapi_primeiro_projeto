@@ -5,7 +5,7 @@ description = ''
 authors = [{ name = 'gian', email = 'lgian584@gmail.com' }]
 readme = 'README.md'
 requires-python = '>=3.13,<4.0'
-dependencies = ['fastapi[standard] (>=0.124.4,<0.125.0)']
+dependencies = ['fastapi[standard] (>=0.124.4,<0.125.0)', "pydantic-settings (>=2.12.0,<3.0.0)", "sqlalchemy (>=2.0.45,<3.0.0)", "alembic (>=1.17.2,<2.0.0)"]
 
 [build-system]
 requires = ['poetry-core>=2.0.0,<3.0.0']
