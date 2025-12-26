@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from fastapi_primeiro_projeto.schemas import UserPublic
+
 
 def test_create_user(client):
     request = client.post(
@@ -15,22 +17,48 @@ def test_create_user(client):
     }
 
 
+def test_create_user_username_conflict(client, user):
+    request = client.post(
+        '/users/',
+        json={'username': 'test', 'email': 'gian@email.com', 'password': '13'},
+    )
+
+    assert request.status_code == HTTPStatus.CONFLICT
+    assert request.json() == {'detail': 'Username already exists'}
+
+
+def test_create_user_email_conflict(client, user):
+    request = client.post(
+        '/users/',
+        json={'username': 'gian', 'email': 'test@test.com', 'password': '13'},
+    )
+
+    assert request.status_code == HTTPStatus.CONFLICT
+    assert request.json() == {'detail': 'Email already exists'}
+
+
 def test_get_users(client):
     request = client.get('/users/')
 
     assert request.status_code == HTTPStatus.OK
-    assert request.json() == {
-        'users': [{'username': 'gian', 'email': 'gian@email.com', 'id': 1}]
-    }
+    assert request.json() == {'users': []}
 
 
-def test_get_user(client):
+def test_get_users_with_one_user(client, user):
+    user_schema = UserPublic.model_validate(user).model_dump()
+    response = client.get('/users/')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'users': [user_schema]}
+
+
+def test_get_user(client, user):
     request = client.get('/users/1')
 
     assert request.status_code == HTTPStatus.OK
     assert request.json() == {
-        'username': 'gian',
-        'email': 'gian@email.com',
+        'username': 'test',
+        'email': 'test@test.com',
         'id': 1,
     }
 
@@ -41,7 +69,7 @@ def test_get_user_not_found(client):
     assert request.json() == {'detail': 'User not found!'}
 
 
-def test_update_user(client):
+def test_update_user(client, user):
     request = client.put(
         '/users/1',
         json={
@@ -59,6 +87,29 @@ def test_update_user(client):
     }
 
 
+def test_update_integrity_error(client, user):
+    client.post(
+        '/users/',
+        json={
+            'username': 'test2',
+            'email': 'test2@test2.com',
+            'password': 'snehaboa',
+        },
+    )
+
+    request = client.put(
+        f'/users/{user.id}',
+        json={
+            'username': 'test2',
+            'email': 'wlh@email.com',
+            'password': 'snehaboaweg',
+        },
+    )
+
+    assert request.status_code == HTTPStatus.CONFLICT
+    assert request.json() == {'detail': 'Username or email already exists'}
+
+
 def test_update_user_not_found(client):
     request = client.put(
         '/users/7',
@@ -73,7 +124,7 @@ def test_update_user_not_found(client):
     assert request.json() == {'detail': 'User not found!'}
 
 
-def test_remove_user(client):
+def test_remove_user(client, user):
     request_delete = client.delete('/users/1/')
     assert request_delete.status_code == HTTPStatus.NO_CONTENT
 
